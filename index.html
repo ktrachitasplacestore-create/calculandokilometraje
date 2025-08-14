@@ -114,10 +114,6 @@
                                 <input id="depreciation" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
                                 <label for="depreciation" class="ml-2 block text-sm text-gray-900">Incluir depreciación del vehículo</label>
                             </div>
-                             <div class="flex items-center">
-                                <input id="food" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-                                <label for="food" class="ml-2 block text-sm text-gray-900">Incluir costo de alimentación</label>
-                            </div>
                         </div>
                     </fieldset>
 
@@ -219,8 +215,8 @@
             "Valle": { municipios: { "Nacaome": {lat: 13.516, lon: -87.483}, "Alianza": {lat: 13.4, lon: -87.6}, "Amapala": {lat: 13.283, lon: -87.65}, "Aramecina": {lat: 13.7, lon: -87.6}, "Caridad": {lat: 13.7, lon: -87.7}, "Goascorán": {lat: 13.583, lon: -87.75}, "Langue": {lat: 13.633, lon: -87.65}, "San Francisco de Coray": {lat: 13.6, lon: -87.5}, "San Lorenzo": {lat: 13.433, lon: -87.45} }},
             "Yoro": { municipios: { "Yoro": {lat: 15.133, lon: -87.133}, "Arenal": {lat: 15.3, lon: -86.9}, "El Negrito": {lat: 15.3, lon: -87.7}, "El Progreso": {lat: 15.4, lon: -87.8}, "Jocón": {lat: 15.2, lon: -86.8}, "Morazán": {lat: 15.316, lon: -87.6}, "Olanchito": {lat: 15.483, lon: -86.566}, "Santa Rita": {lat: 15.2, lon: -87.883}, "Sulaco": {lat: 14.9, lon: -87.2}, "Victoria": {lat: 15.0, lon: -87.0}, "Yorito": {lat: 15.1, lon: -87.3} }}
         };
-        const DEPRECIATION_RATE_PER_KM_HNL = 3.50;
-        const FOOD_COST_PER_DAY_HNL = 400.00;
+        const DEPRECIATION_RATE_PER_KM_HNL = 2.00;
+        const FOOD_COST_PER_DAY_HNL = 150.00;
         const HNL_TO_USD_RATE = 24.7;
 
         // --- MAP INITIALIZATION ---
@@ -360,7 +356,6 @@
             
             const considerTraffic = document.getElementById('traffic').checked;
             const includeDepreciation = document.getElementById('depreciation').checked;
-            const includeFood = document.getElementById('food').checked;
 
             if (isNaN(fuelPrice) || isNaN(efficiency) || efficiency <= 0 || isNaN(authorizedAmount) || isNaN(profitAmount)) {
                  showMessage('Por favor, complete todos los campos financieros con valores válidos.');
@@ -390,11 +385,8 @@
                 depreciationCost = roundTripDistance * (currency === 'USD' ? (DEPRECIATION_RATE_PER_KM_HNL / HNL_TO_USD_RATE) : DEPRECIATION_RATE_PER_KM_HNL);
             }
 
-            let foodCost = 0;
-            // Consider food cost if one-way trip is longer than 4 hours
-            if (includeFood && oneWayDuration > (4 * 3600)) {
-                foodCost = currency === 'USD' ? (FOOD_COST_PER_DAY_HNL / HNL_TO_USD_RATE) : FOOD_COST_PER_DAY_HNL;
-            }
+            // Food cost is now a fixed basic quota, applied unconditionally
+            const foodCost = currency === 'USD' ? (FOOD_COST_PER_DAY_HNL / HNL_TO_USD_RATE) : FOOD_COST_PER_DAY_HNL;
             
             const totalCost = fuelCost + depreciationCost + foodCost;
 
