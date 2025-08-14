@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Kilometraje y Costo de Viaje</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS & JS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Leaflet Routing Machine for Directions -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for a better look */
+        .leaflet-routing-container {
+            display: none; /* We will display our own results */
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+        }
+        .input-field {
+            padding-left: 2.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-600">Calculadora de Viaje</h1>
+            <p class="text-gray-600 mt-2">Planifica tu ruta, estima tiempos y calcula costos de combustible.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Form Section -->
+            <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-lg">
+                <form id="trip-form" class="space-y-6">
+                    <div>
+                        <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">Lugar de Salida</label>
+                        <div class="input-group">
+                            <span class="input-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                            </span>
+                            <input type="text" id="origin" name="origin" class="input-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: Tegucigalpa" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="destination" class="block text-sm font-medium text-gray-700 mb-1">Lugar de Destino</label>
+                        <div class="input-group">
+                             <span class="input-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                            </span>
+                            <input type="text" id="destination" name="destination" class="input-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: San Pedro Sula" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="fuel-price" class="block text-sm font-medium text-gray-700 mb-1">Precio Combustible</label>
+                            <input type="number" id="fuel-price" name="fuel-price" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="105.50" required>
+                        </div>
+                        <div>
+                            <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                            <select id="currency" name="currency" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="HNL">Lempiras (HNL)</option>
+                                <option value="USD">Dólares (USD)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                     <div>
+                        <label for="efficiency" class="block text-sm font-medium text-gray-700 mb-1">Rendimiento del vehículo (Km por Galón)</label>
+                        <input type="number" id="efficiency" name="efficiency" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="40" value="40" required>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input id="traffic" name="traffic" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="traffic" class="ml-2 block text-sm text-gray-900">Considerar costo extra por tráfico pesado</label>
+                    </div>
+
+                    <button type="submit" id="calculate-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 ease-in-out flex items-center justify-center">
+                        <svg id="btn-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                        <svg id="loader-icon" class="animate-spin h-5 w-5 mr-3 hidden" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="btn-text">Calcular Ruta</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Map and Results Section -->
+            <div class="lg:col-span-8 space-y-8">
+                <div id="map" class="h-96 w-full bg-white rounded-2xl shadow-lg z-0"></div>
+                <div id="results-container" class="bg-white p-6 rounded-2xl shadow-lg hidden">
+                    <h2 class="text-2xl font-bold mb-4 text-blue-600">Resumen del Viaje</h2>
+                    <div id="results-content" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Distancia Total</h3>
+                            <p id="distance" class="text-2xl font-bold text-blue-800">-</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Tiempo Estimado</h3>
+                            <p id="duration" class="text-2xl font-bold text-green-800">-</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Costo de Combustible</h3>
+                            <p id="cost" class="text-2xl font-bold text-yellow-800">-</p>
+                        </div>
+                    </div>
+                     <div id="traffic-warning" class="mt-4 text-sm text-center text-orange-600 bg-orange-100 p-3 rounded-lg hidden">
+                        * El costo y tiempo estimado incluyen un ajuste por posible tráfico pesado.
+                    </div>
+                </div>
+                 <!-- Message Box -->
+                <div id="message-box" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
+                    <strong class="font-bold">Error: </strong>
+                    <span class="block sm:inline" id="message-text"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MAP INITIALIZATION ---
+        // Initialize the map and set its view to the coordinates of Honduras, with a zoom level of 7.
+        const map = L.map('map').setView([14.78, -86.5], 7);
+
+        // Add a tile layer to the map from OpenStreetMap.
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        let routingControl = null; // Variable to hold the routing control instance
+
+        // --- DOM ELEMENT REFERENCES ---
+        const form = document.getElementById('trip-form');
+        const resultsContainer = document.getElementById('results-container');
+        const distanceEl = document.getElementById('distance');
+        const durationEl = document.getElementById('duration');
+        const costEl = document.getElementById('cost');
+        const trafficWarning = document.getElementById('traffic-warning');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnIcon = document.getElementById('btn-icon');
+        const loaderIcon = document.getElementById('loader-icon');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        // --- FORM SUBMISSION EVENT ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get form data
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            
+            // Show loading state
+            toggleLoading(true);
+            hideMessage();
+            
+            // Geocode locations
+            const originCoords = await getCoordinates(origin);
+            const destinationCoords = await getCoordinates(destination);
+
+            if (!originCoords || !destinationCoords) {
+                showMessage('No se pudieron encontrar las ubicaciones. Por favor, sé más específico (Ej: "Ciudad, Departamento").');
+                toggleLoading(false);
+                return;
+            }
+            
+            // Calculate and display route
+            calculateRoute(originCoords, destinationCoords);
+        });
+
+        // --- FUNCTIONS ---
+
+        /**
+         * Fetches coordinates for a given place name using Nominatim API.
+         * Appends ", Honduras" to the query to improve search accuracy.
+         * @param {string} placeName - The name of the place to geocode.
+         * @returns {Promise<L.LatLng|null>} A Leaflet LatLng object or null if not found.
+         */
+        async function getCoordinates(placeName) {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName + ', Honduras')}&limit=1`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.length > 0) {
+                    return L.latLng(data[0].lat, data[0].lon);
+                }
+                return null;
+            } catch (error) {
+                console.error('Geocoding error:', error);
+                return null;
+            }
+        }
+
+        /**
+         * Calculates and displays the route on the map and updates the results panel.
+         * @param {L.LatLng} originCoords - The starting coordinates.
+         * @param {L.LatLng} destinationCoords - The ending coordinates.
+         */
+        function calculateRoute(originCoords, destinationCoords) {
+            // Remove previous route if it exists
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+
+            routingControl = L.Routing.control({
+                waypoints: [
+                    originCoords,
+                    destinationCoords
+                ],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                createMarker: function() { return null; } // Disable default markers
+            }).on('routesfound', function(e) {
+                const route = e.routes[0];
+                displayResults(route.summary);
+                toggleLoading(false);
+            }).on('routingerror', function(e) {
+                console.error('Routing error:', e);
+                showMessage('No se pudo encontrar una ruta entre las ubicaciones seleccionadas.');
+                toggleLoading(false);
+            }).addTo(map);
+        }
+
+        /**
+         * Displays the calculated trip results in the UI.
+         * @param {object} summary - The route summary object from Leaflet Routing Machine.
+         */
+        function displayResults(summary) {
+            const distance = summary.totalDistance / 1000; // in km
+            let duration = summary.totalTime; // in seconds
+            
+            // Get values from form for cost calculation
+            const fuelPrice = parseFloat(document.getElementById('fuel-price').value);
+            const currency = document.getElementById('currency').value;
+            const efficiency = parseFloat(document.getElementById('efficiency').value);
+            const considerTraffic = document.getElementById('traffic').checked;
+            
+            if (isNaN(fuelPrice) || isNaN(efficiency) || efficiency <= 0) {
+                 showMessage('Por favor, ingresa un precio de combustible y un rendimiento válidos.');
+                 return;
+            }
+
+            // Adjust for traffic if checked
+            if (considerTraffic) {
+                duration *= 1.30; // Increase time by 30%
+                trafficWarning.classList.remove('hidden');
+            } else {
+                trafficWarning.classList.add('hidden');
+            }
+
+            // Calculate fuel cost
+            let gallonsNeeded = distance / efficiency;
+            if (considerTraffic) {
+                gallonsNeeded *= 1.15; // Increase fuel consumption by 15% for stop-and-go traffic
+            }
+            const totalCost = gallonsNeeded * fuelPrice;
+            
+            // Format and display results
+            distanceEl.textContent = `${distance.toFixed(2)} km`;
+            durationEl.textContent = formatDuration(duration);
+            costEl.textContent = `${currency} ${totalCost.toFixed(2)}`;
+            
+            resultsContainer.classList.remove('hidden');
+        }
+
+        /**
+         * Formats duration from seconds to a human-readable string (X h Y min).
+         * @param {number} seconds - Total seconds.
+         * @returns {string} The formatted duration string.
+         */
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            let result = '';
+            if (hours > 0) {
+                result += `${hours} h `;
+            }
+            if (minutes > 0 || hours === 0) {
+                result += `${minutes} min`;
+            }
+            return result.trim();
+        }
+
+        /**
+         * Toggles the loading state of the calculate button.
+         * @param {boolean} isLoading - True to show loading, false to hide.
+         */
+        function toggleLoading(isLoading) {
+            if (isLoading) {
+                btnText.textContent = 'Calculando...';
+                btnIcon.classList.add('hidden');
+                loaderIcon.classList.remove('hidden');
+                calculateBtn.disabled = true;
+                calculateBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            } else {
+                btnText.textContent = 'Calcular Ruta';
+                btnIcon.classList.remove('hidden');
+                loaderIcon.classList.add('hidden');
+                calculateBtn.disabled = false;
+                calculateBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+        
+        /**
+         * Shows a message in the message box.
+         * @param {string} message - The message to display.
+         */
+        function showMessage(message) {
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the message box.
+         */
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+    </script>
+</body>
+</html>
