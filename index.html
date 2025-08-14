@@ -25,22 +25,8 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom styles for a better look */
         .leaflet-routing-container {
             display: none; /* We will display our own results */
-        }
-        .input-group {
-            position: relative;
-        }
-        .input-icon {
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9CA3AF;
-        }
-        .input-field {
-            padding-left: 2.5rem;
         }
     </style>
 </head>
@@ -56,28 +42,39 @@
             
             <!-- Form Section -->
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-lg">
-                <form id="trip-form" class="space-y-6">
-                    <div>
-                        <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">Lugar de Salida</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
-                            </span>
-                            <input type="text" id="origin" name="origin" class="input-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: Tegucigalpa" required>
+                <form id="trip-form" class="space-y-4">
+                    
+                    <!-- Origin Selection -->
+                    <fieldset class="border border-gray-300 p-4 rounded-lg">
+                        <legend class="text-sm font-medium text-gray-700 px-2">Lugar de Salida</legend>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="origin-department" class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                                <select id="origin-department" name="origin-department" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required></select>
+                            </div>
+                            <div>
+                                <label for="origin-municipality" class="block text-sm font-medium text-gray-700 mb-1">Municipio</label>
+                                <select id="origin-municipality" name="origin-municipality" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required disabled></select>
+                            </div>
                         </div>
-                    </div>
+                    </fieldset>
 
-                    <div>
-                        <label for="destination" class="block text-sm font-medium text-gray-700 mb-1">Lugar de Destino</label>
-                        <div class="input-group">
-                             <span class="input-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
-                            </span>
-                            <input type="text" id="destination" name="destination" class="input-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: San Pedro Sula" required>
+                    <!-- Destination Selection -->
+                     <fieldset class="border border-gray-300 p-4 rounded-lg">
+                        <legend class="text-sm font-medium text-gray-700 px-2">Lugar de Destino</legend>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="destination-department" class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                                <select id="destination-department" name="destination-department" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required></select>
+                            </div>
+                            <div>
+                                <label for="destination-municipality" class="block text-sm font-medium text-gray-700 mb-1">Municipio</label>
+                                <select id="destination-municipality" name="destination-municipality" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required disabled></select>
+                            </div>
                         </div>
-                    </div>
+                    </fieldset>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-4 pt-2">
                         <div>
                             <label for="fuel-price" class="block text-sm font-medium text-gray-700 mb-1">Precio Combustible</label>
                             <input type="number" id="fuel-price" name="fuel-price" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="105.50" required>
@@ -92,7 +89,7 @@
                     </div>
 
                      <div>
-                        <label for="efficiency" class="block text-sm font-medium text-gray-700 mb-1">Rendimiento del vehículo (Km por Galón)</label>
+                        <label for="efficiency" class="block text-sm font-medium text-gray-700 mb-1">Rendimiento (Km por Galón)</label>
                         <input type="number" id="efficiency" name="efficiency" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="40" value="40" required>
                     </div>
 
@@ -145,19 +142,44 @@
     </div>
 
     <script>
-        // --- MAP INITIALIZATION ---
-        // Initialize the map and set its view to the coordinates of Honduras, with a zoom level of 7.
-        const map = L.map('map').setView([14.78, -86.5], 7);
+        // --- DATA FOR HONDURAS DEPARTMENTS AND MUNICIPALITIES ---
+        // This object contains all the necessary data, including coordinates, to avoid external API calls for geocoding.
+        const hondurasData = {
+            "Atlántida": { municipios: { "La Ceiba": {lat: 15.759, lon: -86.782}, "Tela": {lat: 15.775, lon: -87.456}, "Jutiapa": {lat: 15.683, lon: -86.5}, "La Masica": {lat: 15.516, lon: -87.15}, "San Francisco": {lat: 15.6, lon: -87.033}, "Arizona": {lat: 15.65, lon: -87.333}, "El Porvenir": {lat: 15.75, lon: -86.916}, "Esparta": {lat: 15.533, lon: -87.233} }},
+            "Colón": { municipios: { "Trujillo": {lat: 15.918, lon: -85.954}, "Balfate": {lat: 15.833, lon: -85.5}, "Iriona": {lat: 15.6, lon: -85.166}, "Limón": {lat: 15.8, lon: -85.333}, "Sabá": {lat: 15.466, lon: -86.233}, "Santa Fe": {lat: 15.9, lon: -86.05}, "Santa Rosa de Aguán": {lat: 15.95, lon: -85.716}, "Sonaguera": {lat: 15.583, lon: -86.2}, "Tocoa": {lat: 15.683, lon: -86.0}, "Bonito Oriental": {lat: 15.75, lon: -85.7} }},
+            "Comayagua": { municipios: { "Comayagua": {lat: 14.45, lon: -87.633}, "Ajuterique": {lat: 14.333, lon: -87.7}, "El Rosario": {lat: 14.65, lon: -87.566}, "Esquías": {lat: 14.65, lon: -87.366}, "Humuya": {lat: 14.416, lon: -87.683}, "La Libertad": {lat: 14.7, lon: -87.5}, "Lamaní": {lat: 14.166, lon: -87.633}, "La Trinidad": {lat: 14.716, lon: -87.683}, "Lejamaní": {lat: 14.3, lon: -87.733}, "Meámbar": {lat: 14.8, lon: -87.8}, "Minas de Oro": {lat: 14.8, lon: -87.366}, "Ojos de Agua": {lat: 14.816, lon: -87.6}, "San Jerónimo": {lat: 14.6, lon: -87.583}, "San José de Comayagua": {lat: 14.583, lon: -87.5}, "San José del Potrero": {lat: 14.883, lon: -87.3}, "San Luis": {lat: 14.783, lon: -87.433}, "San Sebastián": {lat: 14.333, lon: -87.833}, "Siguatepeque": {lat: 14.6, lon: -87.85}, "Villa de San Antonio": {lat: 14.316, lon: -87.6}, "Las Lajas": {lat: 14.766, lon: -87.633}, "Taulabé": {lat: 14.7, lon: -87.95} }},
+            "Copán": { municipios: { "Santa Rosa de Copán": {lat: 14.766, lon: -88.783}, "Cabañas": {lat: 14.9, lon: -88.8}, "Concepción": {lat: 14.85, lon: -88.883}, "Copán Ruinas": {lat: 14.833, lon: -89.15}, "Corquín": {lat: 14.566, lon: -88.85}, "Cucuyagua": {lat: 14.65, lon: -88.866}, "Dolores": {lat: 14.883, lon: -88.816}, "Dulce Nombre": {lat: 14.8, lon: -88.8}, "El Paraíso": {lat: 15.016, lon: -88.983}, "Florida": {lat: 15.033, lon: -88.85}, "La Jigua": {lat: 14.933, lon: -89.033}, "La Unión": {lat: 14.8, lon: -88.7}, "Nueva Arcadia": {lat: 15.066, lon: -88.733}, "San Agustín": {lat: 14.75, lon: -88.933}, "San Antonio": {lat: 14.966, lon: -88.8}, "San Jerónimo": {lat: 14.966, lon: -88.866}, "San José": {lat: 14.8, lon: -88.85}, "San Juan de Opoa": {lat: 14.7, lon: -88.8}, "San Nicolás": {lat: 14.9, lon: -88.766}, "San Pedro": {lat: 14.666, lon: -88.883}, "Santa Rita": {lat: 14.9, lon: -89.1}, "Trinidad de Copán": {lat: 14.933, lon: -88.766}, "Veracruz": {lat: 14.883, lon: -88.783} }},
+            "Cortés": { municipios: { "San Pedro Sula": {lat: 15.5, lon: -88.033}, "Choloma": {lat: 15.616, lon: -87.95}, "Omoa": {lat: 15.766, lon: -88.033}, "Pimienta": {lat: 15.35, lon: -87.966}, "Potrerillos": {lat: 15.25, lon: -87.95}, "Puerto Cortés": {lat: 15.85, lon: -87.933}, "San Antonio de Cortés": {lat: 15.15, lon: -88.033}, "San Francisco de Yojoa": {lat: 15.016, lon: -87.966}, "San Manuel": {lat: 15.333, lon: -87.916}, "Santa Cruz de Yojoa": {lat: 14.983, lon: -87.9}, "Villanueva": {lat: 15.316, lon: -87.983}, "La Lima": {lat: 15.433, lon: -87.916} }},
+            "Choluteca": { municipios: { "Choluteca": {lat: 13.3, lon: -87.183}, "Apacilagua": {lat: 13.466, lon: -86.983}, "Concepción de María": {lat: 13.2, lon: -86.933}, "Duyure": {lat: 13.566, lon: -86.883}, "El Corpus": {lat: 13.283, lon: -87.033}, "El Triunfo": {lat: 13.133, lon: -86.966}, "Marcovia": {lat: 13.266, lon: -87.3}, "Morolica": {lat: 13.583, lon: -86.9}, "Namasigüe": {lat: 13.183, lon: -87.133}, "Orocuina": {lat: 13.466, lon: -87.066}, "Pespire": {lat: 13.6, lon: -87.366}, "San Antonio de Flores": {lat: 13.666, lon: -87.333}, "San Isidro": {lat: 13.633, lon: -87.3}, "San José": {lat: 13.4, lon: -87.35}, "San Marcos de Colón": {lat: 13.433, lon: -86.8}, "Santa Ana de Yusguare": {lat: 13.2, lon: -87.1} }},
+            "El Paraíso": { municipios: { "Yuscarán": {lat: 13.933, lon: -86.85}, "Alauca": {lat: 13.8, lon: -86.733}, "Danlí": {lat: 14.033, lon: -86.583}, "El Paraíso": {lat: 13.866, lon: -86.5}, "Güinope": {lat: 13.883, lon: -86.95}, "Jacaleapa": {lat: 13.983, lon: -86.65}, "Liure": {lat: 13.666, lon: -86.816}, "Morocelí": {lat: 14.133, lon: -86.883}, "Oropolí": {lat: 13.75, lon: -86.783}, "Potrerillos": {lat: 14.083, lon: -86.8}, "San Antonio de Flores": {lat: 13.8, lon: -86.9}, "San Lucas": {lat: 13.716, lon: -86.7}, "San Matías": {lat: 13.9, lon: -86.6}, "Soledad": {lat: 13.65, lon: -86.75}, "Teupasenti": {lat: 14.233, lon: -86.7}, "Texiguat": {lat: 13.683, lon: -86.966}, "Vado Ancho": {lat: 13.7, lon: -86.733}, "Yauyupe": {lat: 13.666, lon: -86.883}, "Trojes": {lat: 14.083, lon: -85.983} }},
+            "Francisco Morazán": { municipios: { "Tegucigalpa": {lat: 14.1, lon: -87.216}, "Alubarén": {lat: 13.766, lon: -87.466}, "Cedros": {lat: 14.6, lon: -87.133}, "Curarén": {lat: 13.783, lon: -87.55}, "El Porvenir": {lat: 14.666, lon: -87.2}, "Guaimaca": {lat: 14.533, lon: -86.816}, "La Libertad": {lat: 13.9, lon: -87.5}, "La Venta": {lat: 13.716, lon: -87.35}, "Lepaterique": {lat: 14.05, lon: -87.466}, "Maraita": {lat: 13.85, lon: -87.033}, "Marale": {lat: 14.816, lon: -86.9}, "Nueva Armenia": {lat: 13.783, lon: -87.1}, "Ojojona": {lat: 13.933, lon: -87.3}, "Orica": {lat: 14.65, lon: -86.95}, "Reitoca": {lat: 13.833, lon: -87.433}, "Sabanagrande": {lat: 13.8, lon: -87.266}, "San Antonio de Oriente": {lat: 14.05, lon: -87.05}, "San Buenaventura": {lat: 13.9, lon: -87.366}, "San Ignacio": {lat: 14.666, lon: -87.05}, "San Juan de Flores": {lat: 14.3, lon: -87.0}, "San Miguelito": {lat: 13.8, lon: -87.5}, "Santa Ana": {lat: 13.933, lon: -87.266}, "Santa Lucía": {lat: 14.1, lon: -87.116}, "Talanga": {lat: 14.4, lon: -87.083}, "Tatumbla": {lat: 14.016, lon: -87.116}, "Valle de Ángeles": {lat: 14.15, lon: -87.033}, "Villa de San Francisco": {lat: 14.216, lon: -87.016}, "Vallecillo": {lat: 14.9, lon: -87.1} }},
+            "Gracias a Dios": { municipios: { "Puerto Lempira": {lat: 15.266, lon: -83.766}, "Brus Laguna": {lat: 15.75, lon: -84.483}, "Ahuas": {lat: 15.466, lon: -84.35}, "Juan Francisco Bulnes": {lat: 15.866, lon: -84.9}, "Ramón Villeda Morales": {lat: 15.5, lon: -84.0}, "Wampusirpi": {lat: 15.166, lon: -84.6} }},
+            "Intibucá": { municipios: { "La Esperanza": {lat: 14.316, lon: -88.183}, "Camasca": {lat: 14.083, lon: -88.3}, "Colomoncagua": {lat: 14.033, lon: -88.383}, "Concepción": {lat: 14.133, lon: -88.316}, "Dolores": {lat: 14.3, lon: -88.3}, "Intibucá": {lat: 14.316, lon: -88.166}, "Jesús de Otoro": {lat: 14.5, lon: -88.0}, "Magdalena": {lat: 14.05, lon: -88.3}, "Masaguara": {lat: 14.4, lon: -87.95}, "San Antonio": {lat: 14.35, lon: -88.25}, "San Isidro": {lat: 14.4, lon: -88.1}, "San Juan": {lat: 14.433, lon: -88.383}, "San Marcos de la Sierra": {lat: 14.2, lon: -88.25}, "San Miguelito": {lat: 14.25, lon: -88.25}, "Santa Lucía": {lat: 14.1, lon: -88.4}, "Yamaranguila": {lat: 14.25, lon: -88.25}, "San Francisco de Opalaca": {lat: 14.5, lon: -88.3} }},
+            "Islas de la Bahía": { municipios: { "Roatán": {lat: 16.316, lon: -86.533}, "Guanaja": {lat: 16.45, lon: -85.9}, "José Santos Guardiola": {lat: 16.4, lon: -86.3}, "Utila": {lat: 16.1, lon: -86.9} }},
+            "La Paz": { municipios: { "La Paz": {lat: 14.316, lon: -87.683}, "Aguanqueterique": {lat: 13.95, lon: -87.8}, "Cabañas": {lat: 14.066, lon: -87.85}, "Cane": {lat: 14.233, lon: -87.683}, "Chinacla": {lat: 14.183, lon: -87.933}, "Guajiquiro": {lat: 14.1, lon: -87.8}, "Lauterique": {lat: 13.9, lon: -87.7}, "Marcala": {lat: 14.15, lon: -88.033}, "Mercedes de Oriente": {lat: 14.0, lon: -87.9}, "Opatoro": {lat: 14.183, lon: -87.9}, "San Antonio del Norte": {lat: 13.866, lon: -87.683}, "San José": {lat: 14.266, lon: -87.85}, "San Juan": {lat: 14.016, lon: -87.75}, "San Pedro de Tutule": {lat: 14.25, lon: -87.8}, "Santa Ana": {lat: 14.133, lon: -87.9}, "Santa Elena": {lat: 14.05, lon: -88.0}, "Santa María": {lat: 14.2, lon: -87.8}, "Santiago de Puringla": {lat: 14.283, lon: -87.883}, "Yarula": {lat: 14.083, lon: -88.0} }},
+            "Lempira": { municipios: { "Gracias": {lat: 14.583, lon: -88.583}, "Belén": {lat: 14.5, lon: -88.5}, "Candelaria": {lat: 14.083, lon: -88.566}, "Cololaca": {lat: 14.283, lon: -88.833}, "Erandique": {lat: 14.233, lon: -88.466}, "Gualcince": {lat: 14.15, lon: -88.483}, "Guarita": {lat: 14.3, lon: -88.75}, "La Campa": {lat: 14.5, lon: -88.6}, "La Iguala": {lat: 14.65, lon: -88.466}, "Las Flores": {lat: 14.666, lon: -88.6}, "La Unión": {lat: 14.733, lon: -88.4}, "La Virtud": {lat: 14.05, lon: -88.716}, "Lepaera": {lat: 14.8, lon: -88.6}, "Mapulaca": {lat: 14.033, lon: -88.633}, "Piraera": {lat: 14.0, lon: -88.4}, "San Andrés": {lat: 14.2, lon: -88.5}, "San Francisco": {lat: 14.35, lon: -88.4}, "San Juan Guarita": {lat: 14.25, lon: -88.7}, "San Manuel Colohete": {lat: 14.433, lon: -88.65}, "San Rafael": {lat: 14.7, lon: -88.5}, "San Sebastián": {lat: 14.366, lon: -88.766}, "Santa Cruz": {lat: 14.4, lon: -88.3}, "Talgua": {lat: 14.4, lon: -88.5}, "Tambla": {lat: 14.2, lon: -88.7}, "Tomalá": {lat: 14.15, lon: -88.783}, "Valladolid": {lat: 14.066, lon: -88.75}, "Virginia": {lat: 14.016, lon: -88.6}, "San Marcos de Caiquín": {lat: 14.3, lon: -88.6} }},
+            "Ocotepeque": { municipios: { "Ocotepeque": {lat: 14.433, lon: -89.183}, "Belén Gualcho": {lat: 14.5, lon: -88.8}, "Concepción": {lat: 14.533, lon: -89.083}, "Dolores Merendón": {lat: 14.666, lon: -89.116}, "Fraternidad": {lat: 14.483, lon: -89.0}, "La Encarnación": {lat: 14.6, lon: -88.9}, "La Labor": {lat: 14.5, lon: -88.9}, "Lucerna": {lat: 14.4, lon: -88.9}, "Mercedes": {lat: 14.383, lon: -89.0}, "San Fernando": {lat: 14.566, lon: -89.1}, "San Francisco del Valle": {lat: 14.55, lon: -88.95}, "San Jorge": {lat: 14.45, lon: -89.133}, "San Marcos": {lat: 14.4, lon: -88.95}, "Santa Fe": {lat: 14.583, lon: -89.183}, "Sensenti": {lat: 14.466, lon: -88.9}, "Sinuapa": {lat: 14.45, lon: -89.2} }},
+            "Olancho": { municipios: { "Juticalpa": {lat: 14.666, lon: -86.216}, "Campamento": {lat: 14.55, lon: -86.666}, "Catacamas": {lat: 14.85, lon: -85.933}, "Concordia": {lat: 14.6, lon: -86.7}, "Dulce Nombre de Culmí": {lat: 15.1, lon: -85.55}, "El Rosario": {lat: 14.9, lon: -86.7}, "Esquipulas del Norte": {lat: 15.0, lon: -86.6}, "Gualaco": {lat: 15.0, lon: -86.3}, "Guarizama": {lat: 14.7, lon: -86.5}, "Guata": {lat: 14.8, lon: -86.4}, "Guayape": {lat: 14.7, lon: -86.8}, "Jano": {lat: 15.1, lon: -86.5}, "La Unión": {lat: 15.0, lon: -86.7}, "Mangulile": {lat: 14.9, lon: -86.8}, "Manto": {lat: 14.8, lon: -86.6}, "Salamá": {lat: 14.8, lon: -86.6}, "San Esteban": {lat: 15.2, lon: -85.8}, "San Francisco de Becerra": {lat: 14.6, lon: -86.1}, "San Francisco de la Paz": {lat: 14.8, lon: -86.2}, "Santa María del Real": {lat: 14.7, lon: -85.9}, "Silca": {lat: 14.7, lon: -86.4}, "Yocón": {lat: 14.9, lon: -86.8}, "Patuca": {lat: 14.5, lon: -85.3} }},
+            "Santa Bárbara": { municipios: { "Santa Bárbara": {lat: 14.916, lon: -88.233}, "Arada": {lat: 14.8, lon: -88.3}, "Atima": {lat: 14.9, lon: -88.5}, "Azacualpa": {lat: 15.1, lon: -88.5}, "Ceguaca": {lat: 14.8, lon: -88.2}, "Concepción del Norte": {lat: 15.0, lon: -88.3}, "Concepción del Sur": {lat: 14.8, lon: -88.3}, "Chinda": {lat: 15.0, lon: -88.2}, "El Níspero": {lat: 14.8, lon: -88.4}, "Gualala": {lat: 14.9, lon: -88.4}, "Ilama": {lat: 14.9, lon: -88.2}, "Las Vegas": {lat: 14.8, lon: -88.1}, "Macuelizo": {lat: 15.2, lon: -88.7}, "Naranjito": {lat: 14.9, lon: -88.6}, "Nuevo Celilac": {lat: 14.9, lon: -88.4}, "Petoa": {lat: 15.1, lon: -88.3}, "Protección": {lat: 15.0, lon: -88.6}, "Quimistán": {lat: 15.3, lon: -88.4}, "San Francisco de Ojuera": {lat: 14.8, lon: -88.4}, "San José de las Colinas": {lat: 14.9, lon: -88.3}, "San Luis": {lat: 15.0, lon: -88.4}, "San Marcos": {lat: 14.9, lon: -88.7}, "San Nicolás": {lat: 14.9, lon: -88.3}, "San Pedro Zacapa": {lat: 14.8, lon: -88.2}, "Santa Rita": {lat: 14.8, lon: -88.3}, "San Vicente Centenario": {lat: 14.8, lon: -88.2}, "Trinidad": {lat: 15.0, lon: -88.2}, "Nueva Frontera": {lat: 15.1, lon: -88.6} }},
+            "Valle": { municipios: { "Nacaome": {lat: 13.516, lon: -87.483}, "Alianza": {lat: 13.4, lon: -87.6}, "Amapala": {lat: 13.283, lon: -87.65}, "Aramecina": {lat: 13.7, lon: -87.6}, "Caridad": {lat: 13.7, lon: -87.7}, "Goascorán": {lat: 13.583, lon: -87.75}, "Langue": {lat: 13.633, lon: -87.65}, "San Francisco de Coray": {lat: 13.6, lon: -87.5}, "San Lorenzo": {lat: 13.433, lon: -87.45} }},
+            "Yoro": { municipios: { "Yoro": {lat: 15.133, lon: -87.133}, "Arenal": {lat: 15.3, lon: -86.9}, "El Negrito": {lat: 15.3, lon: -87.7}, "El Progreso": {lat: 15.4, lon: -87.8}, "Jocón": {lat: 15.2, lon: -86.8}, "Morazán": {lat: 15.316, lon: -87.6}, "Olanchito": {lat: 15.483, lon: -86.566}, "Santa Rita": {lat: 15.2, lon: -87.883}, "Sulaco": {lat: 14.9, lon: -87.2}, "Victoria": {lat: 15.0, lon: -87.0}, "Yorito": {lat: 15.1, lon: -87.3} }}
+        };
 
-        // Add a tile layer to the map from OpenStreetMap.
+        // --- MAP INITIALIZATION ---
+        const map = L.map('map').setView([14.78, -86.5], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        let routingControl = null; // Variable to hold the routing control instance
+        let routingControl = null;
 
         // --- DOM ELEMENT REFERENCES ---
         const form = document.getElementById('trip-form');
+        const originDeptSelect = document.getElementById('origin-department');
+        const originMuniSelect = document.getElementById('origin-municipality');
+        const destDeptSelect = document.getElementById('destination-department');
+        const destMuniSelect = document.getElementById('destination-municipality');
+        
         const resultsContainer = document.getElementById('results-container');
         const distanceEl = document.getElementById('distance');
         const durationEl = document.getElementById('duration');
@@ -169,77 +191,119 @@
         const loaderIcon = document.getElementById('loader-icon');
         const messageBox = document.getElementById('message-box');
         const messageText = document.getElementById('message-text');
+        
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            populateDepartments(originDeptSelect);
+            populateDepartments(destDeptSelect);
 
-        // --- FORM SUBMISSION EVENT ---
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            originDeptSelect.addEventListener('change', () => populateMunicipalities(originDeptSelect, originMuniSelect));
+            destDeptSelect.addEventListener('change', () => populateMunicipalities(destDeptSelect, destMuniSelect));
             
-            // Get form data
-            const origin = document.getElementById('origin').value;
-            const destination = document.getElementById('destination').value;
-            
-            // Show loading state
-            toggleLoading(true);
-            hideMessage();
-            
-            // Geocode locations
-            const originCoords = await getCoordinates(origin);
-            const destinationCoords = await getCoordinates(destination);
-
-            if (!originCoords || !destinationCoords) {
-                showMessage('No se pudieron encontrar las ubicaciones. Por favor, sé más específico (Ej: "Ciudad, Departamento").');
-                toggleLoading(false);
-                return;
-            }
-            
-            // Calculate and display route
-            calculateRoute(originCoords, destinationCoords);
+            form.addEventListener('submit', handleFormSubmit);
         });
 
         // --- FUNCTIONS ---
 
         /**
-         * Fetches coordinates for a given place name using Nominatim API.
-         * Appends ", Honduras" to the query to improve search accuracy.
-         * @param {string} placeName - The name of the place to geocode.
-         * @returns {Promise<L.LatLng|null>} A Leaflet LatLng object or null if not found.
+         * Populates a select element with the departments of Honduras.
+         * @param {HTMLSelectElement} selectElement - The <select> element to populate.
          */
-        async function getCoordinates(placeName) {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName + ', Honduras')}&limit=1`;
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.length > 0) {
-                    return L.latLng(data[0].lat, data[0].lon);
+        function populateDepartments(selectElement) {
+            selectElement.innerHTML = '<option value="">Seleccione un departamento</option>';
+            for (const department in hondurasData) {
+                const option = document.createElement('option');
+                option.value = department;
+                option.textContent = department;
+                selectElement.appendChild(option);
+            }
+        }
+
+        /**
+         * Populates the municipality select based on the chosen department.
+         * @param {HTMLSelectElement} deptSelect - The department <select> element.
+         * @param {HTMLSelectElement} muniSelect - The municipality <select> element to populate.
+         */
+        function populateMunicipalities(deptSelect, muniSelect) {
+            const selectedDept = deptSelect.value;
+            muniSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+            muniSelect.disabled = true;
+
+            if (selectedDept && hondurasData[selectedDept]) {
+                const municipalities = hondurasData[selectedDept].municipios;
+                for (const municipality in municipalities) {
+                    const option = document.createElement('option');
+                    option.value = municipality;
+                    option.textContent = municipality;
+                    muniSelect.appendChild(option);
                 }
-                return null;
+                muniSelect.disabled = false;
+            }
+        }
+
+        /**
+         * Handles the form submission event.
+         * @param {Event} e - The form submission event.
+         */
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            toggleLoading(true);
+            hideMessage();
+
+            const originDept = originDeptSelect.value;
+            const originMuni = originMuniSelect.value;
+            const destDept = destDeptSelect.value;
+            const destMuni = destMuniSelect.value;
+
+            if (!originDept || !originMuni || !destDept || !destMuni) {
+                showMessage('Por favor, seleccione departamento y municipio para origen y destino.');
+                toggleLoading(false);
+                return;
+            }
+
+            const originCoords = getCoordinates(originDept, originMuni);
+            const destinationCoords = getCoordinates(destDept, destMuni);
+            
+            if (originCoords && destinationCoords) {
+                calculateRoute(originCoords, destinationCoords);
+            } else {
+                 showMessage('No se pudieron obtener las coordenadas para las ubicaciones seleccionadas.');
+                 toggleLoading(false);
+            }
+        }
+
+        /**
+         * Retrieves coordinates from the local hondurasData object.
+         * @param {string} department - The name of the department.
+         * @param {string} municipality - The name of the municipality.
+         * @returns {L.LatLng|null} A Leaflet LatLng object or null if not found.
+         */
+        function getCoordinates(department, municipality) {
+            try {
+                const coords = hondurasData[department].municipios[municipality];
+                return L.latLng(coords.lat, coords.lon);
             } catch (error) {
-                console.error('Geocoding error:', error);
+                console.error("Could not find coordinates for:", department, municipality);
                 return null;
             }
         }
 
         /**
-         * Calculates and displays the route on the map and updates the results panel.
-         * @param {L.LatLng} originCoords - The starting coordinates.
-         * @param {L.LatLng} destinationCoords - The ending coordinates.
+         * Calculates and displays the route on the map.
+         * @param {L.LatLng} originCoords - Starting coordinates.
+         * @param {L.LatLng} destinationCoords - Ending coordinates.
          */
         function calculateRoute(originCoords, destinationCoords) {
-            // Remove previous route if it exists
             if (routingControl) {
                 map.removeControl(routingControl);
             }
-
             routingControl = L.Routing.control({
-                waypoints: [
-                    originCoords,
-                    destinationCoords
-                ],
+                waypoints: [originCoords, destinationCoords],
                 routeWhileDragging: false,
                 addWaypoints: false,
                 draggableWaypoints: false,
                 fitSelectedRoutes: true,
-                createMarker: function() { return null; } // Disable default markers
+                createMarker: function() { return null; }
             }).on('routesfound', function(e) {
                 const route = e.routes[0];
                 displayResults(route.summary);
@@ -256,10 +320,9 @@
          * @param {object} summary - The route summary object from Leaflet Routing Machine.
          */
         function displayResults(summary) {
-            const distance = summary.totalDistance / 1000; // in km
-            let duration = summary.totalTime; // in seconds
+            const distance = summary.totalDistance / 1000;
+            let duration = summary.totalTime;
             
-            // Get values from form for cost calculation
             const fuelPrice = parseFloat(document.getElementById('fuel-price').value);
             const currency = document.getElementById('currency').value;
             const efficiency = parseFloat(document.getElementById('efficiency').value);
@@ -270,22 +333,19 @@
                  return;
             }
 
-            // Adjust for traffic if checked
             if (considerTraffic) {
-                duration *= 1.30; // Increase time by 30%
+                duration *= 1.30;
                 trafficWarning.classList.remove('hidden');
             } else {
                 trafficWarning.classList.add('hidden');
             }
 
-            // Calculate fuel cost
             let gallonsNeeded = distance / efficiency;
             if (considerTraffic) {
-                gallonsNeeded *= 1.15; // Increase fuel consumption by 15% for stop-and-go traffic
+                gallonsNeeded *= 1.15;
             }
             const totalCost = gallonsNeeded * fuelPrice;
             
-            // Format and display results
             distanceEl.textContent = `${distance.toFixed(2)} km`;
             durationEl.textContent = formatDuration(duration);
             costEl.textContent = `${currency} ${totalCost.toFixed(2)}`;
@@ -331,22 +391,14 @@
             }
         }
         
-        /**
-         * Shows a message in the message box.
-         * @param {string} message - The message to display.
-         */
         function showMessage(message) {
             messageText.textContent = message;
             messageBox.classList.remove('hidden');
         }
 
-        /**
-         * Hides the message box.
-         */
         function hideMessage() {
             messageBox.classList.add('hidden');
         }
-
     </script>
 </body>
 </html>
